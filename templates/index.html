@@ -1,1 +1,60 @@
 
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8"/>
+<title>AI Agent Workflow MVP</title>
+<script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-100">
+<div class="max-w-6xl mx-auto p-6">
+<h1 class="text-3xl font-bold mb-4">AI Agent Workflow MVP</h1>
+<div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+<div class="bg-white p-4 rounded-2xl shadow">
+<h2 class="font-semibold text-xl mb-3">Create Workflow</h2>
+<input id="name" class="border p-2 w-full mb-2" placeholder="Workflow Name"/>
+<textarea id="nodes" class="border p-2 w-full h-48 mb-2">[
+ {"type":"input","value":"hello world"},
+ {"type":"llm"}
+]</textarea>
+<button onclick="createWF()" class="bg-black text-white px-4 py-2 rounded-xl">Create</button>
+<div id="msg" class="mt-2 text-sm"></div>
+</div>
+
+<div class="bg-white p-4 rounded-2xl shadow">
+<h2 class="font-semibold text-xl mb-3">Workflows</h2>
+<div id="list"></div>
+</div>
+</div>
+
+<div class="bg-white p-4 rounded-2xl shadow mt-6">
+<h2 class="font-semibold text-xl mb-3">Runs</h2>
+<div id="runs"></div>
+</div>
+</div>
+<script>
+async function load(){
+ let res=await fetch('/api/workflows'); let data=await res.json();
+ document.getElementById('list').innerHTML=data.map(x=>`
+ <div class='border rounded p-2 mb-2'>
+ <b>${x.name}</b> (${x.id})
+ <button class='ml-2 px-2 py-1 bg-blue-600 text-white rounded' onclick="runWF('${x.id}')">Run</button>
+ </div>`).join('');
+ let r=await fetch('/api/runs'); let rr=await r.json();
+ document.getElementById('runs').innerHTML=rr.map(x=>`<div class='border-b py-2'><b>${x.workflow_id}</b>: ${x.result}</div>`).join('');
+}
+async function createWF(){
+ let nodes=JSON.parse(document.getElementById('nodes').value);
+ await fetch('/api/workflows',{method:'POST',headers:{'Content-Type':'application/json'},
+ body:JSON.stringify({name:document.getElementById('name').value,nodes})});
+ document.getElementById('msg').innerText='Created!';
+ load();
+}
+async function runWF(id){
+ await fetch('/api/run/'+id,{method:'POST'});
+ load();
+}
+load();
+</script>
+</body>
+</html>
